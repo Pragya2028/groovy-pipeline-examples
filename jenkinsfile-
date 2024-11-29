@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+    
+    environment {
+        // SonarQube Scanner configuration
+        SONAR_SCANNER_HOME = tool 'SonarQube Scanner'
+        
+        // SonarQube server credentials
+        SONAR_CREDENTIALS = credentials('sonarqube-credentials')
+    }
+    
+    stages {
+        // Clean workspace
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+        // Checkout source code
+        stage('Source Code Checkout') {
+            steps {
+
+
+          
+                   git branch: 'main', 
+                    url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git',
+                    credentialsId: 'Pragya2028'
+            }
+        }
+        
+        // Run code quality scan with SonarQube
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube-Server') {
+                    sh """
+                    ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=your-project-key \
+                    -Dsonar.projectName='Your Project Name' \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=${SONAR_HOST_URL} \
+                    -Dsonar.login=${SONAR_CREDENTIALS_USR} \
+                    -Dsonar.password=${SONAR_CREDENTIALS_PSW} \
+                    -Dsonar.sourceEncoding=UTF-8 \
+                    -Dsonar.exclusions=**/*.java
+                    """
+                }
+            }
+        }
+        
+        // Quality Gate stage
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Post-build actions
+    post {
+        success {
+            echo 'SonarQube Analysis Completed Successfully!'
+        }
+        
+        failure {
+            echo 'SonarQube Analysis Failed. Please review the logs.'
+        }
+    }
+}
+
+
+            
