@@ -1,11 +1,147 @@
-node {
-  stage('SCM') {
-    checkout scm
-  }
-  stage('SonarQube Analysis') {
-    def scannerHome = tool 'SonarScanner';
-    withSonarQubeEnv() {
-      sh "${scannerHome}/bin/sonar-scanner"
+pipeline {
+    agent any  // Runs on any available agent
+
+    environment {
+        // Define SonarQube server details (optional if already set in Jenkins config)
+        SONARQUBE_SERVER = 'Sonarqube 9.9.7'  // This should match the name of your SonarQube server in Jenkins config
+        SONARQUBE_SCANNER = 'Maven', type: 'Tool'  // You can configure the tool globally in Jenkins if needed
     }
-  }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                  checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],  // Change this to the branch you need (e.g., main, develop)
+                    userRemoteConfigs: [[url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git']]
+                  
+                ])']]
+                ])
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    // Example of a Maven build, adjust as necessary for your project (e.g., Gradle, Node.js, etc.)
+                    sh 'mvn clean install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Run SonarQube analysis using the SonarQube Scanner
+                    withSonarQubeEnv(SONARQUBE_SERVER) {
+                        sh "${SONARQUBE_SCANNER}/bin/sonar-scanner -Dsonar.projectKey=demoapp-project -Dsonar.sources=src"
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+  script {
+              def qualityGate = waitForQualityGate()  // Wait for SonarQube Quality Gate status
+            if (qualityGate.status != 'OK') {
+                def issues = qualityGate.conditions.find { it.metricKey == 'vulnerabilities' }
+                if (issues) {
+                    error "Quality Gate failed due to vulnerabilities"
+                } else {
+                    error "Quality Gate failed: ${qualityGate.status}"
+                }
+            }
+        }
+    }
+}
+
+        stage('Deploy') {
+            steps {
+                 echo 'Deploying to remote server using credentials...'
+
+            // Use environment variables for sensitive data
+            sh "scp -i ${env.ssh -i "demo.pem" ec2-user@ec2-13-50-245-64.eu-north-1.compute.amazonaws.com} target/my-app.war ${env.ec2-user}@${env.13.50.245.64}:/path/to/deploy"
+        }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and SonarQube analysis completed successfully!'
+        }
+        failure {
+            echo 'Build failed or SonarQube analysis failed!'
+        }
+    }
+}
+pipeline {
+    agent any  // Runs on any available agent
+
+    environment {
+        // Define SonarQube server details (optional if already set in Jenkins config)
+        SONARQUBE_SERVER = 'SonarQube'  // This should match the name of your SonarQube server in Jenkins config
+        SONARQUBE_SCANNER = tool name: 'SonarQube Scanner', type: 'Tool'  // You can configure the tool globally in Jenkins if needed
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Checkout the code from the SCM (Git in this case)
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    // Example of a Maven build, adjust as necessary for your project (e.g., Gradle, Node.js, etc.)
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Run SonarQube analysis using the SonarQube Scanner
+                    withSonarQubeEnv(SONARQUBE_SERVER) {
+                        sh "${SONARQUBE_SCANNER}/bin/sonar-scanner -Dsonar.projectKey=your_project_key -Dsonar.sources=src"
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    // Wait for the analysis to complete and check the Quality Gate status
+                    timeout(time: 1, unit: 'HOURS') {
+                        waitForQualityGate()  // This will check the quality gate status
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    // Only deploy if the Quality Gate passes
+                    echo 'Deploying application...'
+                    // Deploy steps here
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and SonarQube analysis completed successfully!'
+        }
+        failure {
+            echo 'Build failed or SonarQube analysis failed!'
+        }
+    }
 }
