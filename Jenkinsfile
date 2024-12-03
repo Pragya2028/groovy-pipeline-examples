@@ -10,12 +10,10 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                  checkout([
+                checkout([
                     $class: 'GitSCM',
-                    branches: [[name: 'heads/master']],  // Change this to the branch you need (e.g., main, develop)
+                    branches: [[name: 'refs/heads/master']],  // Use refs/heads for branch names
                     userRemoteConfigs: [[url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git']]
-                  
-            
                 ])
             }
         }
@@ -23,7 +21,7 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Example of a Maven build, adjust as necessary for your project (e.g., Gradle, Node.js, etc.)
+                    // Example of a Maven build (adjust this if you're using another build tool like Gradle, etc.)
                     sh 'mvn clean install'
                 }
             }
@@ -34,8 +32,7 @@ pipeline {
                 script {
                     // Run SonarQube analysis using the SonarQube Scanner
                     withSonarQubeEnv(SONARQUBE_SERVER) {
-                sh "mvn sonar:sonar -Dsonar.projectKey=demoapp-project -Dsonar.sources=src"
-
+                        sh "mvn sonar:sonar -Dsonar.projectKey=demoapp-project -Dsonar.sources=src"
                     }
                 }
             }
@@ -43,27 +40,17 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-  script {
-              def qualityGate = waitForQualityGate()  // Wait for SonarQube Quality Gate status
-            if (qualityGate.status != 'OK') {
-                def issues = qualityGate.conditions.find { it.metricKey == 'vulnerabilities' }
-                if (issues) {
-                    error "Quality Gate failed due to vulnerabilities"
-                } else {
-                    error "Quality Gate failed: ${qualityGate.status}"
-                }
-            }
-        }
-    }
-}
-
-        stage('Deploy') {
-            steps {
-                 echo 'Deploying to remote server using credentials...'
-
-            // Use environment variables for sensitive data
-            sh "scp -i ${env.ssh -i "demo.pem" ec2-user@ec2-13-50-245-64.eu-north-1.compute.amazonaws.com} target/my-app.war ${env.ec2-user}@${env.13.50.245.64}:/path/to/deploy"
-        }
+                script {
+                    // Wait for SonarQube Quality Gate status
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        def issues = qualityGate.conditions.find { it.metricKey == 'vulnerabilities' }
+                        if (issues) {
+                            error "Quality Gate failed due to vulnerabilities"
+                        } else {
+                            error "Quality Gate failed: ${qualityGate.status}"
+                        }
+                    }
                 }
             }
         }
@@ -71,10 +58,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build and SonarQube analysis completed successfully!'
+            echo 'SonarQube analysis completed successfully!'
         }
         failure {
-            echo 'Build failed or SonarQube analysis failed!'
+            echo 'Build or SonarQube analysis failed!'
         }
     }
 }
