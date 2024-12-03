@@ -15,7 +15,7 @@ pipeline {
                     branches: [[name: '*/main']],  // Change this to the branch you need (e.g., main, develop)
                     userRemoteConfigs: [[url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git']]
                   
-                ])']]
+            
                 ])
             }
         }
