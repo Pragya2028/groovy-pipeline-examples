@@ -12,7 +12,7 @@ pipeline {
             steps {
                   checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/'master']],  // Change this to the branch you need (e.g., main, develop)
+                    branches: [[name: 'heads/master']],  // Change this to the branch you need (e.g., main, develop)
                     userRemoteConfigs: [[url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git']]
                   
             
@@ -34,7 +34,8 @@ pipeline {
                 script {
                     // Run SonarQube analysis using the SonarQube Scanner
                     withSonarQubeEnv(SONARQUBE_SERVER) {
-                        sh "${SONARQUBE_SCANNER}/bin/sonar-scanner -Dsonar.projectKey=demoapp-project -Dsonar.sources=src"
+                sh "mvn sonar:sonar -Dsonar.projectKey=demoapp-project -Dsonar.sources=src"
+
                     }
                 }
             }
