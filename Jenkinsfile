@@ -8,16 +8,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: 'refs/heads/master']],  // Use refs/heads for branch names
-                    userRemoteConfigs: [[url: 'https://github.com/Pragya2028/groovy-pipeline-examples.git']]
-                ])
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
