@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Define SonarQube server details (optional if already set in Jenkins config)
         SONARQUBE_SERVER = 'Sonarqube 9.9.7'  // This should match the name of your SonarQube server in Jenkins config
-        SONARQUBE_SCANNER = Sonarqube scanner // You can configure the tool globally in Jenkins if needed
+        SONARQUBE_SCANNER = Git // You can configure the tool globally in Jenkins if needed
     }
 
     stages {
@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     // Example of a Maven build (adjust this if you're using another build tool like Gradle, etc.)
-                    sh 'mvn clean install'
+                    sh 'Git install'
                 }
             }
         }
